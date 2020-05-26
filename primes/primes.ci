@@ -1,0 +1,10 @@
+mainmodule Primes {
+  mainchare Main {
+    entry Main(CkArgMsg *m);
+    entry void result(int index, bool isPrime);
+  };
+
+  chare PrimeChecker {
+    entry PrimeChecker(int index, long n, CProxy_Main main);
+  }
+};
