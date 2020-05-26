@@ -10,6 +10,7 @@ private:
   std::pair<long, bool> *primes;
   int count;
   int completed = 0;
+  double start_time, end_time;
 public:
   Main(CkArgMsg *m);
   void result(int index, bool isPrime);
@@ -22,6 +23,7 @@ Main::Main(CkArgMsg *m)
     CkExit();
   }
 
+  start_time = CkTimer();
   count = std::atoi(m->argv[1]);
   primes = new std::pair<long, bool>[count];
   for (int i = 0; i < count; ++i) {
@@ -36,11 +38,12 @@ void Main::result(int index, bool isPrime)
   ++completed;
   primes[index].second = isPrime;
   if (completed == count) {
-    for (int i = 0; i < count; ++i)
-      ckout
-        << primes[i].first
-        << (primes[i].second ? " is" : " is not")
-        << " prime" << endl;
+    end_time = CkTimer();
+    ckout
+      << "start: " << start_time
+      << " end: " << end_time
+      << " diff: " << (end_time - start_time)
+      << endl;
     delete[] primes;
     CkExit();
   }
@@ -58,6 +61,7 @@ int PrimeChecker::isPrime(const long number)
 {
   if (number <= 1) return 0;
   if (number == 2) return 1;
+  if (number % 2 == 0) return 0;
 
   for (int i = 3; i < number / 2; i += 2) {
     if (0 == number % i)
