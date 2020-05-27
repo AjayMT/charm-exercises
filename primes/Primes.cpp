@@ -70,7 +70,7 @@ int PrimeChecker::isPrime(const uint64_t number)
   if (number == 2) return 1;
   if (number % 2 == 0) return 0;
 
-  for (int i = 3; i <= number / i; i += 2) {
+  for (int i = 3; i * i <= number; i += 2) {
     if (0 == number % i)
       return 0;
   }
