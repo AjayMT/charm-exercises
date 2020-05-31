@@ -27,16 +27,19 @@ Main::Main(CkArgMsg *msg)
   count = std::atoi(msg->argv[1]);
   int m = std::atoi(msg->argv[2]);
   primes = new std::pair<uint64_t, bool>[count];
+
+  for (int i = 0; i < count; ++i) {
+    uint64_t n = ((uint64_t)rand() << 32) | rand();
+    primes[i] = std::make_pair(n, false);
+  }
+
   start_time = CkTimer();
 
   for (int i = 0; i < count; i += m) {
     uint64_t *nums = new uint64_t[m];
     int j = 0;
-    for (; j < m && j + i < count; ++j) {
-      uint64_t n = ((uint64_t)rand() << 32) | rand();
-      primes[i + j] = std::make_pair(n, false);
-      nums[j] = n;
-    }
+    for (; j < m && j + i < count; ++j)
+      nums[j] = primes[i + j].first;
     CProxy_PrimeChecker::ckNew(i, j, nums, thisProxy);
     delete[] nums;
   }
@@ -50,7 +53,7 @@ void Main::result(int index, int m, bool *results)
 
   if (completed == count) {
     end_time = CkTimer();
-    ckout << (end_time - start_time) << endl;
+    ckout << "time=" << (end_time - start_time) << endl;
     delete[] primes;
     CkExit();
   }
