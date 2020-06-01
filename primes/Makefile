@@ -1,6 +1,6 @@
 
 primes: Primes.o
-	charmc -o primes Primes.o
+	charmc -o primes Primes.o -tracemode projections
 
 Primes.o: Primes.cpp Primes.decl.h Primes.def.h
 	charmc -c Primes.cpp
