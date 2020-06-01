@@ -1,10 +1,3 @@
-primes.*.log.gz
-*.sts
-*.projrc
 results.txt
 data.txt
 primes
-charmrun
-*.o
-*.def.h
-*.decl.h

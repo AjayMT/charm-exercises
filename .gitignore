@@ -1,0 +1,7 @@
+*.o
+*.log.gz
+*.sts
+*.projrc
+charmrun
+*.def.h
+*.decl.h
