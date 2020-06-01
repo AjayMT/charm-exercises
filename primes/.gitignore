@@ -1,3 +1,6 @@
+primes.*.log.gz
+*.sts
+*.projrc
 results.txt
 data.txt
 primes
