@@ -10,6 +10,7 @@ private:
 
 public:
   Main(CkArgMsg *m);
+  void calc_n(int s);
   void complete(int max);
 };
 
@@ -24,14 +25,11 @@ Main::Main(CkArgMsg *m)
   v = 1 << v;
   int max_size = std::atoi(m->argv[2]);
 
-  CProxy_DataContainer dcs = CProxy_DataContainer::ckNew(thisProxy, v, v);
-
-  for (int i = 0; i < v; ++i) {
-    int s = rand() % max_size;
-    n += s;
-    dcs[i].initialize_data(s);
-  }
+  CProxy_DataContainer::ckNew(thisProxy, v, max_size, v);
 }
+
+void Main::calc_n(int s)
+{ n = s; }
 
 void Main::complete(int max)
 {
@@ -57,21 +55,24 @@ private:
   int partner();
 
 public:
-  DataContainer(CProxy_Main m, int n)
-    : main(m), num_containers(n), max_stage((int)log2(n))
-    {
-      count_buffer.assign(max_stage, 0);
-      flag_buffer.assign(max_stage, 0);
-      for (int i = thisIndex; i >= 1; i -= 1 << (int)(log2(i)))
-        parity = !parity;
-    }
-  void initialize_data(int s);
+  DataContainer(CProxy_Main m, int n, int ms);
   void recv_count(int count, int from_stage);
   void recv_data(std::vector<int> data, int from_stage);
 };
 
-void DataContainer::initialize_data(int s)
+DataContainer::DataContainer(CProxy_Main m, int n, int ms)
+  : main(m), num_containers(n), max_stage((int)log2(n))
 {
+  count_buffer.assign(max_stage, 0);
+  flag_buffer.assign(max_stage, 0);
+  for (int i = thisIndex; i >= 1; i -= 1 << (int)(log2(i)))
+    parity = !parity;
+
+  int s = rand() % ms;
+  CkCallback cb(CkReductionTarget(Main, calc_n), main);
+  int val = s;
+  contribute(sizeof(int), &val, CkReduction::sum_int, cb);
+
   data.assign(s, thisIndex);
   stage = 1;
   next_stage();
