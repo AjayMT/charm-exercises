@@ -2,11 +2,13 @@
 mainmodule odd_even {
   mainchare Main {
     entry Main(CkArgMsg *m);
-    entry void done(int idx, int num);
+    entry [reductiontarget] void done();
+    entry [reductiontarget] void verified();
   };
 
   array [1D] Elem {
     entry Elem(CProxy_Main m, int s);
     entry void recv_num(int d, int from);
+    entry void verify(int d, bool is_main);
   };
 };

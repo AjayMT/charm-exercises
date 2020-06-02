@@ -8,11 +8,14 @@ class Main : public CBase_Main
 {
 private:
   int n;
-  std::vector<int> sorted;
+  CProxy_Elem elems;
 
 public:
   Main(CkArgMsg *m);
-  void done(int idx, int num);
+  void done()
+    { elems.verify(0, true); }
+  void verified()
+    { CkExit(); }
 };
 
 Main::Main(CkArgMsg *m)
@@ -22,18 +25,7 @@ Main::Main(CkArgMsg *m)
     CkExit();
   }
   n = std::atoi(m->argv[1]);
-  sorted.assign(n, 0);
-  CProxy_Elem::ckNew(thisProxy, n, n);
-}
-
-void Main::done(int idx, int num)
-{
-  --n;
-  sorted[idx] = num;
-  if (n == 0) {
-    for (int i : sorted) ckout << i << endl;
-    CkExit();
-  }
+  elems = CProxy_Elem::ckNew(thisProxy, n, n);
 }
 
 class Elem : public CBase_Elem
@@ -43,8 +35,8 @@ private:
   int n;
   int num;
   int stage = 0;
-  std::vector<int> data_buffer;
-  std::vector<bool> flag_buffer;
+  int next_data = 0;
+  bool next_flag = false;
 
   void next_stage();
 
@@ -67,29 +59,32 @@ private:
 public:
   Elem(CProxy_Main m, int s);
   void recv_num(int d, int from);
+  void verify(int d, bool is_main);
 };
 
 Elem::Elem(CProxy_Main m, int s) : main(m), n(s)
 {
   num = rand();
-  data_buffer.assign(n, 0);
-  flag_buffer.assign(n, false);
   next_stage();
 }
 
 void Elem::next_stage()
 {
   if (stage >= n) {
-    main.done(thisIndex, num);
+    CkCallback cb(CkReductionTarget(Main, done), main);
+    contribute(0, nullptr, CkReduction::nop, cb);
     return;
   }
 
   thisProxy[partner(stage)].recv_num(num, stage);
 
-  if (flag_buffer[stage]) {
-    int d = data_buffer[stage];
-    if ((should_be_greater() && num < d) || (!should_be_greater() && num > d))
-      num = d;
+  if (next_flag) {
+    next_flag = false;
+    if (
+      (should_be_greater() && num < next_data)
+      || (!should_be_greater() && num > next_data)
+      )
+      num = next_data;
     ++stage;
     next_stage();
   }
@@ -98,8 +93,8 @@ void Elem::next_stage()
 void Elem::recv_num(int d, int from)
 {
   if (from != stage) {
-    data_buffer[from] = d;
-    flag_buffer[from] = true;
+    next_data = d;
+    next_flag = true;
     return;
   }
 
@@ -107,6 +102,29 @@ void Elem::recv_num(int d, int from)
     num = d;
   ++stage;
   next_stage();
+}
+
+void Elem::verify(int d, bool is_main)
+{
+  if (is_main) {
+    if (thisIndex < n - 1)
+      thisProxy[thisIndex + 1].verify(num, false);
+
+    if (thisIndex == 0) {
+      CkCallback cb(CkReductionTarget(Main, verified), main);
+      contribute(0, nullptr, CkReduction::nop, cb);
+    }
+    return;
+  }
+
+  if (d > num) {
+    ckout << "did not sort correctly at " << thisIndex
+          << " with values " << d << " " << num << endl;
+    CkExit();
+  }
+
+  CkCallback cb(CkReductionTarget(Main, verified), main);
+  contribute(0, nullptr, CkReduction::nop, cb);
 }
 
 #include "odd_even.def.h"
