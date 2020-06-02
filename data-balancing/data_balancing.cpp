@@ -21,6 +21,7 @@ Main::Main(CkArgMsg *m)
   }
 
   v = std::atoi(m->argv[1]);
+  v = 1 << v;
   int max_size = std::atoi(m->argv[2]);
 
   CProxy_DataContainer dcs = CProxy_DataContainer::ckNew(thisProxy, v, v);
@@ -28,9 +29,7 @@ Main::Main(CkArgMsg *m)
   for (int i = 0; i < v; ++i) {
     int s = rand() % max_size;
     n += s;
-    std::vector<int> v;
-    v.assign(s, i);
-    dcs[i].initialize_data(v);
+    dcs[i].initialize_data(s);
   }
 }
 
@@ -66,14 +65,14 @@ public:
       for (int i = thisIndex; i >= 1; i -= 1 << (int)(log2(i)))
         parity = !parity;
     }
-  void initialize_data(std::vector<int> d);
+  void initialize_data(int s);
   void recv_count(int count, int from_stage);
   void recv_data(std::vector<int> data, int from_stage);
 };
 
-void DataContainer::initialize_data(std::vector<int> d)
+void DataContainer::initialize_data(int s)
 {
-  data = d;
+  data.assign(s, thisIndex);
   stage = 1;
   next_stage();
 }

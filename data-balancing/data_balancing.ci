@@ -7,7 +7,7 @@ mainmodule data_balancing {
 
   array [1D] DataContainer {
     entry DataContainer(CProxy_Main m, int num_containers);
-    entry void initialize_data(std::vector<int> data);
+    entry void initialize_data(int s);
     entry void recv_count(int count, int from_stage);
     entry void recv_data(std::vector<int> data, int from_stage);
   };
