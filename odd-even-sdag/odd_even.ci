@@ -1,0 +1,19 @@
+
+mainmodule odd_even {
+  mainchare Main {
+    entry Main(CkArgMsg *m);
+    entry [reductiontarget] void done();
+    entry [reductiontarget] void verified();
+  };
+
+  array [1D] Elem {
+    entry Elem(CProxy_Main m, int s);
+    entry void next_stage() {
+      when recv_num(int d) serial {
+        process_num(d);
+      }
+    };
+    entry void recv_num(int d);
+    entry void verify(int d, bool is_main);
+  };
+};
