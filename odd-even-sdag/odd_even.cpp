@@ -43,21 +43,22 @@ private:
   // - its index is even and it is on an odd stage
   //   (i.e its partner is the odd chare to its left)
   // - its index is odd and it is on an even stage
-  //   (its partner is the even number to its left)
+  //   (its partner is the even chare to its left)
   int should_be_greater()
     { return (stage + thisIndex) % 2 != 0; }
 
   int partner(int s)
     {
-      int p = thisIndex + (should_be_greater() ? -1 : 1);
+      int p = thisIndex + ((s + thisIndex) % 2 != 0 ? -1 : 1);
       if (p < 0) p = 0;
       if (p >= n) p = n - 1;
       return p;
     }
 
+  void process_num(int d);
+
 public:
   Elem(CProxy_Main m, int s);
-  void process_num(int d);
   void verify(int d, bool is_main);
 };
 
@@ -65,24 +66,22 @@ Elem::Elem(CProxy_Main m, int s) : main(m), n(s)
 {
   self = thisProxy[thisIndex];
   num = rand();
-  thisProxy[partner(stage)].recv_num(num);
-  self.next_stage();
+  thisProxy[partner(stage)].recv_num(stage, num);
+  self.do_sort();
 }
 
 void Elem::process_num(int d)
 {
-  if ((should_be_greater() && num < d) || (!should_be_greater() && num > d))
-    num = d;
-  ++stage;
-
   if (stage >= n) {
     CkCallback cb(CkReductionTarget(Main, done), main);
     contribute(0, nullptr, CkReduction::nop, cb);
     return;
   }
 
-  thisProxy[partner(stage)].recv_num(num);
-  self.next_stage();
+  if ((should_be_greater() && num < d) || (!should_be_greater() && num > d))
+    num = d;
+
+  thisProxy[partner(stage + 1)].recv_num(stage + 1, num);
 }
 
 void Elem::verify(int d, bool is_main)

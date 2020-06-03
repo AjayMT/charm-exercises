@@ -8,12 +8,14 @@ mainmodule odd_even {
 
   array [1D] Elem {
     entry Elem(CProxy_Main m, int s);
-    entry void next_stage() {
-      when recv_num(int d) serial {
-        process_num(d);
+    entry void do_sort() {
+      for (stage = 0; stage < n + 1; ++stage) {
+        when recv_num[stage](int from_stage, int d) serial {
+          process_num(d);
+        }
       }
     };
-    entry void recv_num(int d);
+    entry void recv_num(int from_stage, int d);
     entry void verify(int d, bool is_main);
   };
 };
