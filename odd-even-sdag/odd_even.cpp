@@ -70,20 +70,6 @@ Elem::Elem(CProxy_Main m, int s) : main(m), n(s)
   self.do_sort();
 }
 
-void Elem::process_num(int d)
-{
-  if (stage >= n) {
-    CkCallback cb(CkReductionTarget(Main, done), main);
-    contribute(0, nullptr, CkReduction::nop, cb);
-    return;
-  }
-
-  if ((should_be_greater() && num < d) || (!should_be_greater() && num > d))
-    num = d;
-
-  thisProxy[partner(stage + 1)].recv_num(stage + 1, num);
-}
-
 void Elem::verify(int d, bool is_main)
 {
   if (is_main) {

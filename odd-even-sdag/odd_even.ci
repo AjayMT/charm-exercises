@@ -9,10 +9,18 @@ mainmodule odd_even {
   array [1D] Elem {
     entry Elem(CProxy_Main m, int s);
     entry void do_sort() {
-      for (stage = 0; stage < n + 1; ++stage) {
+      while (stage < n) {
         when recv_num[stage](int from_stage, int d) serial {
-          process_num(d);
+          if ((should_be_greater() && num < d) || (!should_be_greater() && num > d))
+            num = d;
+
+          ++stage;
+          thisProxy[partner(stage)].recv_num(stage, num);
         }
+      }
+      serial {
+        CkCallback cb(CkReductionTarget(Main, done), main);
+        contribute(0, nullptr, CkReduction::nop, cb);
       }
     };
     entry void recv_num(int from_stage, int d);
