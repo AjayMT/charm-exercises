@@ -1,0 +1,34 @@
+
+mainmodule particles {
+  mainchare Main {
+    entry Main(CkArgMsg *m);
+  };
+
+  array [2D] Box {
+    entry Box(int n, int k);
+
+    entry void run() {
+      for (iter = 0; iter < MAX_ITER; ++iter) {
+        serial {
+          if (iter % 10 == 0) {
+            // perform reduction
+          }
+          update_particles();
+        }
+
+        for (sub_iter = 0; sub_iter < 8; ++sub_iter) {
+          when recv_particle[iter](
+            int from, std::vector<std::pair<double, double>> ps
+            ) serial {
+            particles.insert(particles.end(), ps.begin(), ps.end());
+          }
+        }
+      }
+    };
+
+    entry void recv_particle(
+      int from,
+      std::vector<std::pair<double, double>> particles
+      );
+  };
+};
