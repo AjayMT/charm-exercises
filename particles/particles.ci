@@ -2,16 +2,26 @@
 mainmodule particles {
   mainchare Main {
     entry Main(CkArgMsg *m);
+    entry [reductiontarget] void gather(CkReductionMsg *m);
+    entry [reductiontarget] void done();
   };
 
   array [2D] Box {
-    entry Box(int n, int k);
+    entry Box(int n, int k, CProxy_Main m);
 
     entry void run() {
       for (iter = 0; iter < MAX_ITER; ++iter) {
         serial {
           if (iter % 10 == 0) {
-            // perform reduction
+            int data = particles.size();
+            CkReduction::tupleElement tuple_red[] = {
+              CkReduction::tupleElement(sizeof(int), &data, CkReduction::max_int),
+              CkReduction::tupleElement(sizeof(int), &data, CkReduction::sum_int)
+            };
+            CkReductionMsg *msg = CkReductionMsg::buildFromTuple(tuple_red, 2);
+            CkCallback cb(CkReductionTarget(Main, gather), main);
+            msg->setCallback(cb);
+            contribute(msg);
           }
           update_particles();
         }
@@ -23,6 +33,10 @@ mainmodule particles {
             particles.insert(particles.end(), ps.begin(), ps.end());
           }
         }
+      }
+      serial {
+        CkCallback cb(CkReductionTarget(Main, done), main);
+        contribute(0, nullptr, CkReduction::nop, cb);
       }
     };
 

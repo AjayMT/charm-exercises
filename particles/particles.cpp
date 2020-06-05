@@ -8,15 +8,18 @@
 #include <random>
 #include <algorithm>
 
-#define MAX_ITER 1000000
+#define MAX_ITER 100
 
 class Main : public CBase_Main
 {
 private:
   CProxy_Box boxes;
+  int k;
 
 public:
   Main(CkArgMsg *m);
+  void gather(CkReductionMsg *m);
+  void done() { CkExit(); }
 };
 
 Main::Main(CkArgMsg *m)
@@ -27,14 +30,27 @@ Main::Main(CkArgMsg *m)
   }
 
   int n = std::atoi(m->argv[1]);
-  int k = std::atoi(m->argv[2]);
-  boxes = CProxy_Box::ckNew(n, k, k, k);
+  k = std::atoi(m->argv[2]);
+  boxes = CProxy_Box::ckNew(n, k, thisProxy, k, k);
 }
 
+void Main::gather(CkReductionMsg *msg)
+{
+  CkReduction::tupleElement *results;
+  int num_reductions;
+  msg->toTuple(&results, &num_reductions);
+  int max = *(int *)results[0].data;
+  int sum = *(int *)results[1].data;
+  ckout << "max: " << max
+        << " average: " << ((double)sum / (double)(k * k)) << endl;
+  delete[] results;
+}
 
 class Box : public CBase_Box
 {
   Box_SDAG_CODE
+
+  CProxy_Main main;
 
   int n, k;
   double x, y, size;
@@ -46,10 +62,10 @@ class Box : public CBase_Box
   void update_particles();
 
 public:
-  Box(int sn, int sk);
+  Box(int sn, int sk, CProxy_Main m);
 };
 
-Box::Box(int sn, int sk) : n(sn), k(sk)
+Box::Box(int sn, int sk, CProxy_Main m) : n(sn), k(sk), main(m)
 {
   size = 100.0 / (double)k;
   x = thisIndex.x * size;
