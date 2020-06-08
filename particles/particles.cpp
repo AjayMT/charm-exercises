@@ -69,6 +69,7 @@ class Box : public CBase_Box
 
   void update_particles();
   void generate_particles(Particle::color_t c, int num);
+  void perturb(Particle *p);
 
 public:
   Box(int sn, int sk, CProxy_Main m);
@@ -85,16 +86,15 @@ Box::Box(int sn, int sk, CProxy_Main m) : n(sn), k(sk), main(m)
   std::mt19937_64 e2(rd());
   std::uniform_real_distribution<> dist(0, size);
 
+  if (thisIndex.x <= thisIndex.y)
+    generate_particles(Particle::GREEN, n);
+  if (thisIndex.x >= thisIndex.y)
+    generate_particles(Particle::BLUE, n);
   if (
     thisIndex.x * 8 >= 3 * k && thisIndex.x * 8 <= 5 * k
     && thisIndex.y * 8 >= 3 * k && thisIndex.y * 8 <= 5 * k
     )
     generate_particles(Particle::RED, n * 2);
-
-  if (thisIndex.x + (k - thisIndex.y) <= k)
-    generate_particles(Particle::GREEN, n);
-  if (thisIndex.x + (k - thisIndex.y) >= k)
-    generate_particles(Particle::BLUE, n);
 }
 
 void Box::generate_particles(Particle::color_t c, int num)
@@ -109,22 +109,27 @@ void Box::generate_particles(Particle::color_t c, int num)
   }
 }
 
+void Box::perturb(Particle *p)
+{
+  double velocityFactor = 100.0;
+  double deltax = cos(p->y);
+  double deltay = cos(p->x);
+
+  double pf = 1;
+  if (p->color == Particle::GREEN) pf = 5;
+  if (p->color == Particle::BLUE) pf = 2;
+
+  p->x += deltax / (velocityFactor * pf);
+  p->y += deltay / (velocityFactor * pf);
+}
+
 void Box::update_particles()
 {
-  std::random_device rd;
-  std::mt19937_64 e2(rd());
-  std::uniform_real_distribution<> dist(-size / 10.0, size / 10.0);
-
   std::vector<int> outside[3][3];
   std::vector<Particle> next_particles;
 
-
   for (int i = 0; i < particles.size(); ++i) {
-    double perturb_factor = 1.0;
-    if (particles[i].color == Particle::GREEN) perturb_factor = 0.5;
-    if (particles[i].color == Particle::BLUE) perturb_factor = 0.25;
-    particles[i].x += dist(e2) * perturb_factor;
-    particles[i].y += dist(e2) * perturb_factor;
+    perturb(&particles[i]);
 
     int px = (int)std::floor(particles[i].x / size);
     int py = (int)std::floor(particles[i].y / size);
@@ -165,15 +170,15 @@ void Box::update_particles()
 void Box::render(liveVizRequestMsg *m)
 {
   char *imageBuf = new char[3 * 50 * 50];
-  memset(imageBuf, 0, 3 * 50 * 50);
+  memset(imageBuf, 0xff, 3 * 50 * 50);
 
   for (Particle p : particles) {
     int px = (((p.x - x) / size) * 50.0);
     int py = (((p.y - y) / size) * 50.0);
     int idx = (py * 50 + px) * 3;
-    imageBuf[idx] |= p.color == Particle::RED ? 0xff : 0;
-    imageBuf[idx + 1] |= p.color == Particle::GREEN ? 0xff : 0;
-    imageBuf[idx + 2] |= p.color == Particle::BLUE ? 0xff : 0;
+    imageBuf[idx] = p.color == Particle::RED ? 0xff : 0;
+    imageBuf[idx + 1] = p.color == Particle::GREEN ? 0xff : 0;
+    imageBuf[idx + 2] = p.color == Particle::BLUE ? 0xff : 0;
   }
 
   liveVizDeposit(
