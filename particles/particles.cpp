@@ -61,7 +61,7 @@ class Box : public CBase_Box
   CProxy_Main main;
 
   int n, k;
-  double x, y, size;
+  double x, y;
   int iter = 0;
   int sub_iter = 0;
 
@@ -78,21 +78,21 @@ public:
 
 Box::Box(int sn, int sk, CProxy_Main m) : n(sn), k(sk), main(m)
 {
-  size = 100.0 / (double)k;
-  x = thisIndex.x * size;
-  y = thisIndex.y * size;
+  x = thisIndex.x;
+  y = thisIndex.y;
 
   std::random_device rd;
   std::mt19937_64 e2(rd());
-  std::uniform_real_distribution<> dist(0, size);
+  std::uniform_real_distribution<> dist(0, 1);
 
   if (thisIndex.x <= thisIndex.y)
     generate_particles(Particle::GREEN, n);
   if (thisIndex.x >= thisIndex.y)
     generate_particles(Particle::BLUE, n);
   if (
-    thisIndex.x * 8 >= 3 * k && thisIndex.x * 8 <= 5 * k
-    && thisIndex.y * 8 >= 3 * k && thisIndex.y * 8 <= 5 * k
+    (thisIndex.x * 8 >= 3 * k && thisIndex.x * 8 <= 5 * k
+     && thisIndex.y * 8 >= 3 * k && thisIndex.y * 8 <= 5 * k)
+    || thisIndex.x == thisIndex.y
     )
     generate_particles(Particle::RED, n * 2);
 }
@@ -101,7 +101,7 @@ void Box::generate_particles(Particle::color_t c, int num)
 {
   std::random_device rd;
   std::mt19937_64 e2(rd());
-  std::uniform_real_distribution<> dist(0, size);
+  std::uniform_real_distribution<> dist(0, 1);
 
   for (int i = 0; i < num; ++i) {
     Particle p(x + dist(e2), y + dist(e2), c);
@@ -111,7 +111,7 @@ void Box::generate_particles(Particle::color_t c, int num)
 
 void Box::perturb(Particle *p)
 {
-  double velocityFactor = 100.0;
+  double velocityFactor = 50.0;
   double deltax = cos(p->y);
   double deltay = cos(p->x);
 
@@ -131,18 +131,18 @@ void Box::update_particles()
   for (int i = 0; i < particles.size(); ++i) {
     perturb(&particles[i]);
 
-    int px = (int)std::floor(particles[i].x / size);
-    int py = (int)std::floor(particles[i].y / size);
+    int px = (int)std::floor(particles[i].x);
+    int py = (int)std::floor(particles[i].y);
 
     if (px == thisIndex.x && py == thisIndex.y) {
       next_particles.push_back(particles[i]);
       continue;
     }
 
-    particles[i].x = fmod(particles[i].x, 100.0);
-    particles[i].y = fmod(particles[i].y, 100.0);
-    if (particles[i].x < 0) particles[i].x += 100.0;
-    if (particles[i].y < 0) particles[i].y += 100.0;
+    particles[i].x = fmod(particles[i].x, k);
+    particles[i].y = fmod(particles[i].y, k);
+    if (particles[i].x < 0) particles[i].x += k;
+    if (particles[i].y < 0) particles[i].y += k;
 
     px -= thisIndex.x - 1; py -= thisIndex.y - 1;
     outside[px][py].push_back(i);
@@ -173,8 +173,8 @@ void Box::render(liveVizRequestMsg *m)
   memset(imageBuf, 0xff, 3 * 50 * 50);
 
   for (Particle p : particles) {
-    int px = (((p.x - x) / size) * 50.0);
-    int py = (((p.y - y) / size) * 50.0);
+    int px = ((p.x - x) * 50.0);
+    int py = ((p.y - y) * 50.0);
     int idx = (py * 50 + px) * 3;
     imageBuf[idx] = p.color == Particle::RED ? 0xff : 0;
     imageBuf[idx + 1] = p.color == Particle::GREEN ? 0xff : 0;
