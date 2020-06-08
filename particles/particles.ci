@@ -1,5 +1,7 @@
 
 mainmodule particles {
+  include "particles.h";
+
   mainchare Main {
     entry Main(CkArgMsg *m);
     entry [reductiontarget] void gather(CkReductionMsg *m);
@@ -10,7 +12,7 @@ mainmodule particles {
     entry Box(int n, int k, CProxy_Main m);
 
     entry void run() {
-      for (iter = 0; iter < MAX_ITER; ++iter) {
+      for (iter = 0; 1; ++iter) {
         serial {
           if (iter % 10 == 0) {
             int data = particles.size();
@@ -28,7 +30,7 @@ mainmodule particles {
 
         for (sub_iter = 0; sub_iter < 8; ++sub_iter) {
           when recv_particle[iter](
-            int from, std::vector<std::pair<double, double>> ps
+            int from, std::vector<Particle> ps
             ) serial {
             particles.insert(particles.end(), ps.begin(), ps.end());
           }
@@ -42,7 +44,9 @@ mainmodule particles {
 
     entry void recv_particle(
       int from,
-      std::vector<std::pair<double, double>> particles
+      std::vector<Particle> particles
       );
+
+    entry void render(liveVizRequestMsg *m);
   };
 };

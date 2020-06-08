@@ -1,11 +1,11 @@
 
 particles: particles.o
-	charmc -o particles particles.o
+	charmc -o particles particles.o -module liveViz
 
 particles.o: particles.cpp particles.decl.h particles.def.h
 	charmc -O3 -c particles.cpp
 
-particles.decl.h particles.def.h: particles.ci
+particles.decl.h particles.def.h: particles.ci particles.h
 	charmc particles.ci
 
 .PHONY: clean
