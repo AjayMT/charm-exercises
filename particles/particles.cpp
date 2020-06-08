@@ -9,7 +9,7 @@
 #include <random>
 #include <algorithm>
 
-#define MAX_ITER 1000
+#define MAX_ITER 100
 
 class Main : public CBase_Main
 {
@@ -86,21 +86,15 @@ Box::Box(int sn, int sk, CProxy_Main m) : n(sn), k(sk), main(m)
   std::uniform_real_distribution<> dist(0, size);
 
   if (
-    thisIndex.x * 4 >= k && thisIndex.x * 4 <= 3 * k
-    && thisIndex.y * 4 >= k && thisIndex.y * 4 <= 3 * k
+    thisIndex.x * 8 >= 3 * k && thisIndex.x * 8 <= 5 * k
+    && thisIndex.y * 8 >= 3 * k && thisIndex.y * 8 <= 5 * k
     )
     generate_particles(Particle::RED, n * 2);
 
-  if (thisIndex.x + thisIndex.y <= k)
+  if (thisIndex.x + (k - thisIndex.y) <= k)
     generate_particles(Particle::GREEN, n);
-  if (thisIndex.x + thisIndex.y >= k)
+  if (thisIndex.x + (k - thisIndex.y) >= k)
     generate_particles(Particle::BLUE, n);
-
-  Particle::color_t c = Particle::RED;
-  for (int i = 0; i < n; ++i) {
-    Particle p(x + dist(e2), y + dist(e2), c);
-    particles.push_back(p);
-  }
 }
 
 void Box::generate_particles(Particle::color_t c, int num)
@@ -113,7 +107,6 @@ void Box::generate_particles(Particle::color_t c, int num)
     Particle p(x + dist(e2), y + dist(e2), c);
     particles.push_back(p);
   }
-
 }
 
 void Box::update_particles()
@@ -171,22 +164,22 @@ void Box::update_particles()
 
 void Box::render(liveVizRequestMsg *m)
 {
-  char *imageBuf = new char[3 * 100 * 100];
-  memset(imageBuf, 0, 3 * 100 * 100);
+  char *imageBuf = new char[3 * 50 * 50];
+  memset(imageBuf, 0, 3 * 50 * 50);
 
   for (Particle p : particles) {
-    int px = (((p.x - x) / size) * 100.0);
-    int py = (((p.y - y) / size) * 100.0);
-    int idx = (py * 100 + px) * 3;
-    imageBuf[idx] = p.color == Particle::RED ? 0xff : 0;
-    imageBuf[idx + 1] = p.color == Particle::GREEN ? 0xff : 0;
-    imageBuf[idx + 2] = p.color == Particle::BLUE ? 0xff : 0;
+    int px = (((p.x - x) / size) * 50.0);
+    int py = (((p.y - y) / size) * 50.0);
+    int idx = (py * 50 + px) * 3;
+    imageBuf[idx] |= p.color == Particle::RED ? 0xff : 0;
+    imageBuf[idx + 1] |= p.color == Particle::GREEN ? 0xff : 0;
+    imageBuf[idx + 2] |= p.color == Particle::BLUE ? 0xff : 0;
   }
 
   liveVizDeposit(
     m,
-    thisIndex.x * 100, thisIndex.y * 100,
-    100, 100,
+    thisIndex.x * 50, thisIndex.y * 50,
+    50, 50,
     (const unsigned char *)imageBuf,
     this
     );
