@@ -1,0 +1,31 @@
+
+mainmodule key_value {
+  mainchare Main {
+    entry Main(CkArgMsg *m);
+    entry [reductiontarget] void done(long sum);
+  };
+
+  array [1D] A {
+    entry A(int m, int n, int k, CProxy_Main main);
+
+    entry void run() {
+      forall [iter] (0:k-1, 1) {
+        serial {
+          long key = requests[iter].first;
+          thisProxy[key / size].request(thisIndex, iter, key);
+        }
+        when response[iter](int table_idx, long value) serial {
+          requests[table_idx].second = value;
+        }
+      }
+      serial {
+        long sum = 0;
+        for (int i = 0; i < k; ++i) sum += requests[i].second;
+        CkCallback cb(CkReductionTarget(Main, done), main);
+        contribute(sizeof(long), &sum, CkReduction::sum_long, cb);
+      }
+    };
+    entry void request(int chare_idx, int table_idx, long key);
+    entry void response(int table_idx, long value);
+  };
+};
