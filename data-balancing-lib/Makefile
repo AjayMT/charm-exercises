@@ -1,13 +1,15 @@
 
+CHARMC = $(CHARM_HOME)/bin/charmc
+
 data-balancing: data_balancing.o
-	charmc -o data-balancing data_balancing.o
+	$(CHARMC) -o data-balancing data_balancing.o
 
 data_balancing.o: data_balancing.cpp data_balancing.decl.h data_balancing.def.h data_container.h data_container.decl.h data_container.def.h
-	charmc -O3 -c data_balancing.cpp
+	$(CHARMC) -O3 -c data_balancing.cpp
 
 data_balancing.decl.h data_balancing.def.h data_container.decl.h data_container.def.h: data_balancing.ci data_container.ci
-	charmc data_container.ci
-	charmc data_balancing.ci
+	$(CHARMC) data_container.ci
+	$(CHARMC) data_balancing.ci
 
 .PHONY: clean
 clean:

@@ -91,4 +91,6 @@ void DataContainer<DType>::balance_data()
 #include "data_container.def.h"
 #undef CK_TEMPLATES_ONLY
 
+#include "data_container.def.h"
+
 #endif /* _DATA_CONTAINER_H_ */

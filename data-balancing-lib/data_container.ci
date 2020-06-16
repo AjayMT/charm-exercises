@@ -7,18 +7,18 @@ module data_container {
 
     entry void balance() {
       for (stage = 1; stage < num_containers; stage <<= 1) {
-        if (thisIndex + stage < num_containers) serial {
-            thisProxy[thisIndex + stage].recv_count(stage, prefix_sum);
+        if (this->thisIndex + stage < num_containers) serial {
+            this->thisProxy[this->thisIndex + stage].recv_count(stage, prefix_sum);
           }
-        if (thisIndex >= stage)
+        if (this->thisIndex >= stage)
           when recv_count[stage](int stage, int count) serial {
             prefix_sum += count;
           }
       }
 
       serial {
-        if (thisIndex == num_containers - 1)
-          thisProxy.recv_total(prefix_sum);
+        if (this->thisIndex == num_containers - 1)
+          this->thisProxy.recv_total(prefix_sum);
       }
 
       when recv_total(int t) serial {
