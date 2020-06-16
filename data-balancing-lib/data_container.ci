@@ -1,8 +1,9 @@
 
 module data_container {
+  template <typename DType>
   array [1D] DataContainer {
     entry DataContainer(CkCallback cb, int n);
-    entry void set_data(std::vector<int> d);
+    entry void set_data(std::vector<DType> d);
 
     entry void balance() {
       for (stage = 1; stage < num_containers; stage <<= 1) {
@@ -29,6 +30,6 @@ module data_container {
 
     entry void recv_total(int t);
     entry void recv_count(int stage, int count);
-    entry void recv_data(std::vector<int> d);
+    entry void recv_data(std::vector<DType> d);
   };
 };

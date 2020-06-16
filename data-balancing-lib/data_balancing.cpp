@@ -25,10 +25,7 @@ Main::Main(CkArgMsg *m)
   v = 1 << v;
   int max_size = std::atoi(m->argv[2]);
 
-  //CProxy_DataContainer<int> dc = CProxy_DataContainer<int>::ckNew(
-  //  CkCallback(CkReductionTarget(Main, complete), thisProxy), v, v
-  //  );
-  CProxy_DataContainer dc = CProxy_DataContainer::ckNew(
+  CProxy_DataContainer<int> dc = CProxy_DataContainer<int>::ckNew(
     CkCallback(CkReductionTarget(Main, complete), thisProxy), v, v
     );
   int n = 0;

@@ -6,5 +6,5 @@ mainmodule data_balancing {
   };
 
   extern module data_container;
-  // array [1D] DataContainer<int>;
+  array [1D] DataContainer<int>;
 };
