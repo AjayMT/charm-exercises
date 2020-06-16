@@ -1,0 +1,10 @@
+
+mainmodule data_balancing {
+  mainchare Main {
+    entry Main(CkArgMsg *m);
+    entry [reductiontarget] void complete(int max);
+  };
+
+  extern module data_container;
+  // array [1D] DataContainer<int>;
+};
