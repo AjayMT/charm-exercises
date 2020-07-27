@@ -1,0 +1,13 @@
+
+mainmodule k_means {
+  mainchare Main {
+    entry Main(CkArgMsg *);
+    entry [reductiontarget] void update_counts(int counts[n], int n);
+    entry [reductiontarget] void update_coords(double coords[n], int n);
+  };
+
+  array [1d] Points {
+    entry Points(int n, int m, CProxy_Main);
+    entry void assign(double centroid[n], int n);
+  };
+};
