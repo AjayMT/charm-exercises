@@ -10,8 +10,7 @@ struct Main : public CBase_Main
   int n, m, k;
   CProxy_Points points;
   double *centroid;
-  int *counts = nullptr;
-  double *coords = nullptr;
+  int *prev_counts = nullptr;
 
   Main(CkArgMsg *);
   void run();
@@ -39,11 +38,7 @@ Main::Main(CkArgMsg *msg)
 }
 
 void Main::run()
-{
-  counts = nullptr;
-  coords = nullptr;
-  points.assign(centroid, 2 * k);
-}
+{ points.assign(centroid, 2 * k); }
 
 void Main::update(CkReductionMsg *msg)
 {
@@ -54,9 +49,14 @@ void Main::update(CkReductionMsg *msg)
   double *coords = (double *)(results[1].data);
 
   double max_diff = 0;
+  int total_change = 0;
   CkPrintf("\n");
+
   for (int i = 0; i < k; ++i) {
     CkPrintf("counts[%d] = %d\n", i, counts[i]);
+    if (prev_counts) total_change += std::abs(counts[i] - prev_counts[i]);
+    else total_change += counts[i];
+
     if (counts[i] == 0) continue;
     double x_mean = coords[i << 1] / static_cast<double>(counts[i]);
     double y_mean = coords[(i << 1) + 1] / static_cast<double>(counts[i]);
@@ -64,17 +64,24 @@ void Main::update(CkReductionMsg *msg)
     double y_diff = std::fabs(y_mean - centroid[(i << 1) + 1]);
     double diff = std::fmax(x_diff, y_diff);
     if (max_diff < diff) max_diff = diff;
+
     centroid[i << 1] = x_mean;
     centroid[(i << 1) + 1] = y_mean;
   }
-  CkPrintf("max centroid change: %f\n", max_diff);
-  if (max_diff <= 0.001) {
+
+  if (prev_counts == nullptr) prev_counts = new int[k];
+  std::memcpy(prev_counts, counts, k * sizeof(int));
+  total_change >>= 1;
+
+  CkPrintf("max centroid change: %f, total particles moved: %d\n",
+           max_diff, total_change);
+  if (total_change == 0) {
     for (int i = 0; i < k; ++i)
       CkPrintf("centroid %d: %f %f\n", i, centroid[i << 1], centroid[(i << 1) + 1]);
     CkExit();
   }
-  run();
 
+  run();
   delete[] results;
 }
 
