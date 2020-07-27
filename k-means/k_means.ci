@@ -2,8 +2,7 @@
 mainmodule k_means {
   mainchare Main {
     entry Main(CkArgMsg *);
-    entry [reductiontarget] void update_counts(int counts[n], int n);
-    entry [reductiontarget] void update_coords(double coords[n], int n);
+    entry [reductiontarget] void update(CkReductionMsg *);
   };
 
   array [1d] Points {

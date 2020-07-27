@@ -15,9 +15,7 @@ struct Main : public CBase_Main
 
   Main(CkArgMsg *);
   void run();
-  void update_counts(int *, int);
-  void update_coords(double *, int);
-  void update(int *, double *);
+  void update(CkReductionMsg *);
 };
 
 Main::Main(CkArgMsg *msg)
@@ -47,20 +45,14 @@ void Main::run()
   points.assign(centroid, 2 * k);
 }
 
-void Main::update_counts(int *counts_, int n_counts)
+void Main::update(CkReductionMsg *msg)
 {
-  counts = counts_;
-  if (coords) update(counts, coords);
-}
+  int num_reductions;
+  CkReduction::tupleElement *results;
+  msg->toTuple(&results, &num_reductions);
+  int *counts = (int *)(results[0].data);
+  double *coords = (double *)(results[1].data);
 
-void Main::update_coords(double *coords_, int n_coords)
-{
-  coords = coords_;
-  if (counts) update(counts, coords);
-}
-
-void Main::update(int *counts, double *coords)
-{
   double max_diff = 0;
   CkPrintf("\n");
   for (int i = 0; i < k; ++i) {
@@ -82,6 +74,8 @@ void Main::update(int *counts, double *coords)
     CkExit();
   }
   run();
+
+  delete[] results;
 }
 
 struct Points : CBase_Points
@@ -137,12 +131,20 @@ void Points::assign(double *centroid, int n_centroid_pairs)
     coords[(min_idx << 1) + 1] += points[i].second;
   }
 
-  CkCallback update_counts(CkReductionTarget(Main, update_counts), main);
-  CkCallback update_coords(CkReductionTarget(Main, update_coords), main);
-  contribute(n_centroid * sizeof(int), assigned, CkReduction::sum_int, update_counts);
-  contribute(
-    n_centroid_pairs * sizeof(double), coords, CkReduction::sum_double, update_coords
-    );
+  CkCallback update(CkReductionTarget(Main, update), main);
+
+  CkReduction::tupleElement tupleRedn[] = {
+    CkReduction::tupleElement(
+      n_centroid * sizeof(int), assigned, CkReduction::sum_int
+      ),
+    CkReduction::tupleElement(
+      n_centroid_pairs * sizeof(double), coords, CkReduction::sum_double
+      )
+  };
+  CkReductionMsg *msg = CkReductionMsg::buildFromTuple(tupleRedn, 2);
+  msg->setCallback(update);
+  contribute(msg);
+
   delete[] assigned;
   delete[] coords;
 }
