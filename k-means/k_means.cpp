@@ -24,6 +24,7 @@ Main::Main(CkArgMsg *msg)
 {
   if (msg->argc < 4) { CkPrintf("3 arguments required\n"); CkExit(); }
 
+  std::srand(std::time(NULL));
   n = std::atoi(msg->argv[1]);
   m = std::atoi(msg->argv[2]);
   k = std::atoi(msg->argv[3]);
@@ -60,20 +61,26 @@ void Main::update_coords(double *coords_, int n_coords)
 
 void Main::update(int *counts, double *coords)
 {
-  double max_diff = -1;
+  double max_diff = 0;
+  CkPrintf("\n");
   for (int i = 0; i < k; ++i) {
+    CkPrintf("counts[%d] = %d\n", i, counts[i]);
     if (counts[i] == 0) continue;
-    double x_mean = coords[i << 1] / ((double)counts[i]);
-    double y_mean = coords[(i << 1) + 1] / ((double)counts[i]);
+    double x_mean = coords[i << 1] / static_cast<double>(counts[i]);
+    double y_mean = coords[(i << 1) + 1] / static_cast<double>(counts[i]);
     double x_diff = std::fabs(x_mean - centroid[i << 1]);
     double y_diff = std::fabs(y_mean - centroid[(i << 1) + 1]);
     double diff = std::fmax(x_diff, y_diff);
-    if (max_diff == -1 || max_diff < diff) max_diff = diff;
+    if (max_diff < diff) max_diff = diff;
     centroid[i << 1] = x_mean;
     centroid[(i << 1) + 1] = y_mean;
   }
-  CkPrintf("%f\n", max_diff);
-  if (max_diff <= 0.001) CkExit();
+  CkPrintf("max centroid change: %f\n", max_diff);
+  if (max_diff <= 0.001) {
+    for (int i = 0; i < k; ++i)
+      CkPrintf("centroid %d: %f %f\n", i, centroid[i << 1], centroid[(i << 1) + 1]);
+    CkExit();
+  }
   run();
 }
 
@@ -116,8 +123,8 @@ void Points::assign(double *centroid, int n_centroid_pairs)
     double min_dist = 0;
     int min_idx = -1;
     for (int j = 0; j < n_centroid; ++j) {
-      double x = points[i].first - centroid[i << 1];
-      double y = points[i].second - centroid[(i << 1) + 1];
+      double x = points[i].first - centroid[j << 1];
+      double y = points[i].second - centroid[(j << 1) + 1];
       double dist = (x * x) + (y * y);
       if (min_idx == -1 || dist < min_dist) {
         min_dist = dist;
@@ -136,6 +143,8 @@ void Points::assign(double *centroid, int n_centroid_pairs)
   contribute(
     n_centroid_pairs * sizeof(double), coords, CkReduction::sum_double, update_coords
     );
+  delete[] assigned;
+  delete[] coords;
 }
 
 #include "k_means.def.h"
