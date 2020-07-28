@@ -57,7 +57,13 @@ void Main::update(CkReductionMsg *msg)
     if (prev_counts) total_change += std::abs(counts[i] - prev_counts[i]);
     else total_change += counts[i];
 
-    if (counts[i] == 0) continue;
+    if (counts[i] == 0) {
+      double x = static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
+      double y = static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
+      centroid[i << 1] = x;
+      centroid[(i << 1) + 1] = y;
+      continue;
+    }
     double x_mean = coords[i << 1] / static_cast<double>(counts[i]);
     double y_mean = coords[(i << 1) + 1] / static_cast<double>(counts[i]);
     double x_diff = std::fabs(x_mean - centroid[i << 1]);
